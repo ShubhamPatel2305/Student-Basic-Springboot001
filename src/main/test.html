@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student CSV Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #uploadForm {
+            background-color: #f4f4f4;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        #responseDiv {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9e9e9;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+<div id="uploadForm">
+    <h2>Upload Student CSV</h2>
+    <form id="csvForm">
+        <input type="file" id="csvFile" accept=".csv" required>
+        <button type="submit">Upload CSV</button>
+    </form>
+</div>
+
+<div id="responseDiv"></div>
+
+<script>
+    document.getElementById('csvForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('csvFile');
+        const responseDiv = document.getElementById('responseDiv');
+
+        if (!fileInput.files.length) {
+            responseDiv.textContent = 'Please select a CSV file.';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        fetch('http://localhost:3001/api/v1/students/addByCSV', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                responseDiv.textContent = 'Error: ' + error.message;
+            });
+    });
+</script>
+</body>
+</html>
