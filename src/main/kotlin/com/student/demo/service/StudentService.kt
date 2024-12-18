@@ -12,6 +12,16 @@ import org.springframework.web.multipart.MultipartFile
 import java.io.InputStreamReader
 import java.util.UUID
 
+import com.itextpdf.text.*
+import com.itextpdf.text.pdf.PdfPCell
+import com.itextpdf.text.pdf.PdfPTable
+import com.itextpdf.text.pdf.PdfWriter
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import java.io.ByteArrayOutputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 @Service
 class StudentService(
     private val studentRepository : StudentRepository,
@@ -181,4 +191,64 @@ class StudentService(
         }
     }
 
+    fun generateStudentDetailsPDF(studentId: String): ByteArray {
+        // Find student
+        val student = studentRepository.findById(studentId)
+            .orElseThrow { NoSuchElementException("Student not found with ID: $studentId") }
+
+        // Create PDF
+        val outputStream = ByteArrayOutputStream()
+
+        try {
+            val document = Document()
+            PdfWriter.getInstance(document, outputStream)
+
+            document.open()
+
+            // Title
+            val titleFont = Font(Font.FontFamily.HELVETICA, 18f, Font.BOLD)
+            val title = Paragraph("Student Details", titleFont)
+            title.alignment = Element.ALIGN_CENTER
+            document.add(title)
+
+            // Add some spacing
+            document.add(Paragraph(" "))
+
+            // Student Details Table
+            val table = PdfPTable(2)
+            table.widthPercentage = 100f
+            table.setWidths(floatArrayOf(40f, 60f))
+
+            // Helper function to add rows
+            fun addRow(label: String, value: String) {
+                val labelCell = PdfPCell(Phrase(label))
+                labelCell.border = Rectangle.BOX
+                labelCell.backgroundColor = BaseColor.LIGHT_GRAY
+
+                val valueCell = PdfPCell(Phrase(value))
+                valueCell.border = Rectangle.BOX
+
+                table.addCell(labelCell)
+                table.addCell(valueCell)
+            }
+
+            // Add student details
+            addRow("Student ID", student.id ?: "N/A")
+            addRow("Name", student.name)
+            addRow("Email", student.email)
+            addRow("Class", student.classTag)
+            addRow("Age", student.age.toString())
+            addRow("Gender", student.gender.toString())
+            addRow("Generated On", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+
+            document.add(table)
+
+            document.close()
+        } catch (e: Exception) {
+            throw RuntimeException("Error generating PDF: ${e.message}")
+        }
+
+        // Return PDF bytes
+        return outputStream.toByteArray()
+    }
 }

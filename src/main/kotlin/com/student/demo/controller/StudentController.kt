@@ -2,7 +2,9 @@ package com.student.demo.controller
 
 import com.student.demo.model.Student
 import com.student.demo.service.StudentService
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
@@ -34,5 +36,25 @@ class StudentController(
 //            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only CSV file can be uploaded")
 //        }
         return studentService.addStudentsByCSV(file)
+    }
+
+    @GetMapping("/getDetailsPDF/{id}")
+    fun getStudentDetailsPDF(@PathVariable id: String): ResponseEntity<Any> {
+        return try {
+            val pdfBytes = studentService.generateStudentDetailsPDF(id)
+
+            ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=student_details_${id}.pdf")
+                .body(pdfBytes)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body("Student not found with ID: $id")
+        } catch (e: Exception) {
+            ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error generating PDF: ${e.message}")
+        }
     }
 }
