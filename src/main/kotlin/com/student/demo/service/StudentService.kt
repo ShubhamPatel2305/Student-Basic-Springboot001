@@ -2,6 +2,7 @@ package com.student.demo.service
 
 import com.student.demo.model.Student
 import com.student.demo.repository.StudentRepository
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
@@ -9,7 +10,8 @@ import java.util.UUID
 
 @Service
 class StudentService(
-    private val studentRepository : StudentRepository
+    private val studentRepository : StudentRepository,
+    @Autowired private val emailService: EmailService
 ) {
     fun addStudent(student: Student): ResponseEntity<Any>{
         //check if student with same email already exists
@@ -23,6 +25,8 @@ class StudentService(
             id=UUID.randomUUID().toString()
         )
         val savedStudent= studentRepository.save(studentWithUUId)
+
+        emailService.sendMail("Admission Success!!!","You have been sucessfully added to XYZ School",savedStudent.email)
         return ResponseEntity.status(HttpStatus.CREATED).body(savedStudent)
     }
 
