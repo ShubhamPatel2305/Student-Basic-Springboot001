@@ -16,16 +16,21 @@ import com.itextpdf.text.*
 import com.itextpdf.text.pdf.PdfPCell
 import com.itextpdf.text.pdf.PdfPTable
 import com.itextpdf.text.pdf.PdfWriter
+import com.student.demo.repository.CustomStudentRepository
+import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.web.client.RestTemplate
 import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Service
 class StudentService(
-    private val studentRepository : StudentRepository,
-    @Autowired private val emailService: EmailService
+    private val studentRepository: StudentRepository,
+    @Autowired private val emailService: EmailService,
+    private val customStudentRepository: CustomStudentRepository,
+    private val restTemplate: RestTemplate
 ) {
     fun addStudent(student: Student): ResponseEntity<Any>{
         //check if student with same email already exists
@@ -250,5 +255,50 @@ class StudentService(
 
         // Return PDF bytes
         return outputStream.toByteArray()
+    }
+
+    fun listStudents(
+        name: String?,
+        age: Int?,
+        classTag: String?,
+        gender: String?,
+        email: String?,
+        page:Int,
+        pageSize: Int
+    ): List<Student>{
+        val students=customStudentRepository.searchAndFilter(
+            name=name,
+            age=age,
+            classTag=classTag,
+            gender=gender,
+            page = page,
+            pageSize = pageSize,
+            email= email
+        )
+
+        return students
+    }
+
+    fun signIn(email: String, password: String) {
+        val url = "https://teamsync-infosys-internship-oct2024-9gij.vercel.app/user/signin"
+        val headers = HttpHeaders()
+        headers.set("token", "abc")
+        headers.contentType = MediaType.APPLICATION_JSON
+
+        val request = HttpEntity(mapOf("email" to email, "password" to password), headers)
+
+        try {
+            val response = restTemplate.postForEntity(url, request, Map::class.java)
+
+            if (response.statusCode == HttpStatus.OK) {
+                val token = response.body?.get("token")
+                println("Token: $token")
+            } else if (response.statusCode == HttpStatus.BAD_REQUEST) {
+                val errors = response.body?.get("errors")
+                println("Error: $errors")
+            }
+        } catch (e: Exception) {
+            println("Exception occurred: ${e.message}")
+        }
     }
 }

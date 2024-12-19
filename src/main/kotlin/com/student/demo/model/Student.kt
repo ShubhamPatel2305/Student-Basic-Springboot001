@@ -14,6 +14,16 @@ data class Student (
     val gender: Gender
 )
 
+data class ListStudentsInput(
+    val name: String? = null,
+    val age: Int? = null,
+    val classTag: String? = null,
+    val gender: String? = null,
+    val email: String? = null,
+    val page:Int,
+    val pageSize:Int
+)
+
 enum class Gender{
     M,F,O
 }
